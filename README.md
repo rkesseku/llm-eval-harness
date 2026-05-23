@@ -1,5 +1,9 @@
 # LLM Evaluation & Guardrails Harness
 
+# LLM Evaluation & Guardrails Harness
+
+[![CI](https://github.com/rkesseku/llm-eval-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/rkesseku/llm-eval-harness/actions/workflows/ci.yml)
+
 A reusable evaluation framework for LLM applications. Score correctness, track cost and latency, and catch regressions before promoting prompt or model changes to production.
 
 ## Why this exists

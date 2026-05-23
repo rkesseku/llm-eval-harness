@@ -1,6 +1,5 @@
 name: CI
 
-# Run on pushes to main and on every pull request targeting main
 on:
   push:
     branches: [main]

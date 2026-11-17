@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 from llm_eval_harness.models import EvalResult, TestCase, Verdict
 
@@ -25,6 +26,7 @@ class JudgeOutput:
     verdict: Verdict
     reasoning: str
     tokens_used: int
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class Evaluator(ABC):
@@ -52,7 +54,7 @@ class Evaluator(ABC):
         try:
             judgment = self._evaluate(test_case, actual_output)
             error: str | None = None
-        except Exception as exc:  # broad on purpose: one judge crash != run crash
+        except Exception as exc:  # noqa: BLE001 - broad on purpose: one judge crash != run crash
             judgment = JudgeOutput(
                 score=0.0,
                 verdict=Verdict.ERROR,
@@ -72,5 +74,6 @@ class Evaluator(ABC):
             reasoning=judgment.reasoning,
             latency_ms=elapsed_ms,
             tokens_used=judgment.tokens_used,
+            details=judgment.details,
             error=error,
         )

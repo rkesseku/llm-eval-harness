@@ -18,8 +18,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 from llm_eval_harness.evaluators.base import Evaluator
-from llm_eval_harness.llm_client import LLMClient
-from llm_eval_harness.models import EvalReport, EvalResult, TestCase
+from llm_eval_harness.llm_client import CompletionResult, LLMClient
+from llm_eval_harness.models import CaseMetrics, EvalReport, EvalResult, TestCase
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,9 +51,20 @@ class EvalRunner:
         """Run all evaluators over all test cases and return an aggregated report."""
         test_cases = list(test_cases)
         results: list[EvalResult] = []
+        case_metrics: list[CaseMetrics] = []
 
         for test_case in test_cases:
-            actual_output = self._invoke_system(test_case)
+            completion = self._call_system(test_case)
+            actual_output = completion.text
+            case_metrics.append(
+                CaseMetrics(
+                    test_case_id=test_case.id,
+                    model=completion.model,
+                    latency_ms=completion.latency_ms,
+                    prompt_tokens=completion.prompt_tokens,
+                    completion_tokens=completion.completion_tokens,
+                )
+            )
             for evaluator in self._evaluators:
                 result = evaluator.evaluate(test_case, actual_output)
                 results.append(result)
@@ -62,14 +73,18 @@ class EvalRunner:
             results=results,
             total_test_cases=len(test_cases),
             total_evaluators=len(self._evaluators),
+            case_metrics=case_metrics,
         )
 
     def _invoke_system(self, test_case: TestCase) -> str:
         """Call the system-under-test on one test case and return its response text."""
-        completion = self._system_client.complete(
+        return self._call_system(test_case).text
+
+    def _call_system(self, test_case: TestCase) -> CompletionResult:
+        """Call the system-under-test and return the full completion (text + usage)."""
+        return self._system_client.complete(
             system=self._config.system_prompt,
             user=test_case.input,
             temperature=self._config.temperature,
             max_tokens=self._config.max_tokens,
         )
-        return completion.text

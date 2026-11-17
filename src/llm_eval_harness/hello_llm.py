@@ -17,7 +17,6 @@ from typing import Final
 from dotenv import load_dotenv
 from groq import Groq
 
-
 MODEL: Final[str] = "llama-3.3-70b-versatile"
 
 

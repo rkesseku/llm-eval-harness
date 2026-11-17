@@ -22,6 +22,7 @@ dependencies = [
     "groq>=0.11.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.5.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +32,9 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.10.0",
 ]
+
+[project.scripts]
+llm-eval = "llm_eval_harness.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/rkesseku/llm-eval-harness"

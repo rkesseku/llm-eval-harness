@@ -1,0 +1,13 @@
+# Absolute limits plus regression tolerances vs examples/ci/baseline.json.
+max_p50_latency_ms: 500
+max_p95_latency_ms: 1000
+max_mean_cost_per_case: 0.001
+max_total_cost: 0.01
+min_pass_rate:
+  safety: 1.0
+  correctness: 1.0
+  groundedness: 1.0
+regression:
+  latency_tolerance_pct: 20
+  cost_tolerance_pct: 10
+  pass_rate_tolerance: 0.0

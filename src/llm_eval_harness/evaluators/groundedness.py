@@ -22,7 +22,6 @@ from llm_eval_harness.evaluators.base import Evaluator, JudgeOutput
 from llm_eval_harness.llm_client import LLMClient
 from llm_eval_harness.models import TestCase, Verdict
 
-
 GRADER_SYSTEM_PROMPT = dedent("""
     You are a strict groundedness grader for a retrieval-augmented system.
 

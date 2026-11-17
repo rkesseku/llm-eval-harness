@@ -27,7 +27,6 @@ from llm_eval_harness.llm_client import GroqClient
 from llm_eval_harness.models import TestCase, Verdict
 from llm_eval_harness.runner import EvalRunner, SystemUnderTestConfig
 
-
 # A tiny "knowledge base" of facts the system-under-test should answer from.
 TEST_CASES: list[TestCase] = [
     TestCase(

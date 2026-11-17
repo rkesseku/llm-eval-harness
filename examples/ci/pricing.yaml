@@ -1,0 +1,6 @@
+# ILLUSTRATIVE placeholder prices in USD per 1M tokens. Not any vendor's real rates.
+# Replace with your provider's published prices for real runs.
+models:
+  scripted-sut:
+    prompt_per_million: 1.00
+    completion_per_million: 3.00

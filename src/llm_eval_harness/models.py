@@ -71,7 +71,23 @@ class EvalResult(BaseModel):
     error: str | None = Field(
         default=None, description="If verdict is ERROR, the exception message."
     )
+    details: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Evaluator-specific structured details (e.g. safety findings).",
+    )
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseMetrics(BaseModel):
+    """Latency and token usage of the system-under-test call for one test case."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    test_case_id: str
+    model: str = "unknown"
+    latency_ms: float = Field(..., ge=0.0)
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
 
 
 class EvalReport(BaseModel):
@@ -82,6 +98,10 @@ class EvalReport(BaseModel):
     results: list[EvalResult]
     total_test_cases: int
     total_evaluators: int
+    case_metrics: list[CaseMetrics] = Field(
+        default_factory=list,
+        description="Per-test-case latency / token usage of the system-under-test call.",
+    )
 
     @property
     def pass_rate(self) -> float:

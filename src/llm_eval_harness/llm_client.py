@@ -17,9 +17,6 @@ import time
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
-from dotenv import load_dotenv
-from groq import Groq
-
 
 @dataclass(frozen=True, slots=True)
 class CompletionResult:
@@ -53,6 +50,10 @@ class GroqClient:
     DEFAULT_MODEL = "llama-3.3-70b-versatile"
 
     def __init__(self, *, model: str | None = None, api_key: str | None = None) -> None:
+        # Imported lazily so offline use (fake clients, CI gate) needs no vendor SDK.
+        from dotenv import load_dotenv
+        from groq import Groq
+
         load_dotenv()
         key = api_key or os.getenv("GROQ_API_KEY")
         if not key:
@@ -129,4 +130,55 @@ class FakeLLMClient:
             total_tokens=self._tokens * 2,
             latency_ms=0.1,
             model="fake",
+        )
+
+
+class ScriptedLLMClient:
+    """Deterministic offline client with scripted responses and fixed latency/usage.
+
+    `responses` maps a substring to a canned reply; the first key found in the
+    user message wins, otherwise `default` is returned. Latency and token usage
+    are constants, so latency/cost regression runs are fully reproducible and
+    need no network or secrets.
+    """
+
+    def __init__(
+        self,
+        *,
+        responses: dict[str, str] | None = None,
+        default: str = "OK",
+        latency_ms: float = 100.0,
+        prompt_tokens: int = 50,
+        completion_tokens: int = 20,
+        model: str = "scripted",
+    ) -> None:
+        self._responses = dict(responses or {})
+        self._default = default
+        self._latency_ms = latency_ms
+        self._prompt_tokens = prompt_tokens
+        self._completion_tokens = completion_tokens
+        self.model = model
+        self.calls: list[dict[str, object]] = []
+
+    def complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        temperature: float = 0.2,
+        max_tokens: int = 512,
+    ) -> CompletionResult:
+        self.calls.append({"system": system, "user": user})
+        text = self._default
+        for key, reply in self._responses.items():
+            if key in user:
+                text = reply
+                break
+        return CompletionResult(
+            text=text,
+            prompt_tokens=self._prompt_tokens,
+            completion_tokens=self._completion_tokens,
+            total_tokens=self._prompt_tokens + self._completion_tokens,
+            latency_ms=self._latency_ms,
+            model=self.model,
         )

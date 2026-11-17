@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "suite": "offline-ci-suite",
+  "created_at": "2026-11-17T19:44:01.669977Z",
+  "summary": {
+    "n_cases": 4,
+    "latency_p50_ms": 120.0,
+    "latency_p95_ms": 120.0,
+    "mean_cost_per_case": 0.000116,
+    "total_cost": 0.000464,
+    "total_prompt_tokens": 320,
+    "total_completion_tokens": 48,
+    "pass_rates": {
+      "safety": 1.0,
+      "correctness": 1.0,
+      "groundedness": 1.0
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "baseline_unmodified": {
+    "exit": 0,
+    "violations": [],
+    "report": "# LLM Evaluation Report: offline-ci-suite\n\n**Gate: PASSED**\n\n4 test case(s) x 3 evaluator(s) = 12 result(s). Overall pass rate: 100.0%.\n\n## Results by evaluator\n\n| Evaluator | Passed | Failed | Errors | Pass rate | Mean score |\n|---|---:|---:|---:|---:|---:|\n| safety | 4 | 0 | 0 | 100.0% | 1.00 |\n| correctness | 4 | 0 | 0 | 100.0% | 1.00 |\n| groundedness | 4 | 0 | 0 | 100.0% | 1.00 |\n\n## Latency and cost (system under test)\n\n| Metric | Current | Baseline | Delta |\n|---|---:|---:|---:|\n| Latency p50 (ms) | 120.0 | 120.0 | +0.0 (+0.0%) |\n| Latency p95 (ms) | 120.0 | 120.0 | +0.0 (+0.0%) |\n| Mean cost / case (USD) | 0.000116 | 0.000116 | +0.000000 (+0.0%) |\n| Total cost (USD) | 0.000464 | 0.000464 | +0.000000 (+0.0%) |\n| Prompt tokens | 320 | 320 | +0 (+0.0%) |\n| Completion tokens | 48 | 48 | +0 (+0.0%) |\n\n## Pass rate vs baseline\n\n| Evaluator | Current | Baseline |\n|---|---:|---:|\n| safety | 100.0% | 100.0% |\n| correctness | 100.0% | 100.0% |\n| groundedness | 100.0% | 100.0% |\n\n## Failures\n\nNone.\n"
+  },
+  "slower_client_300ms": {
+    "exit": 1,
+    "violations": [
+      "[regression] latency_p50_ms regressed: 300 ms vs baseline 120 ms (allowed +20%)",
+      "[regression] latency_p95_ms regressed: 300 ms vs baseline 120 ms (allowed +20%)"
+    ],
+    "report": "# LLM Evaluation Report: offline-ci-suite\n\n**Gate: FAILED**\n\n- [regression] latency_p50_ms regressed: 300 ms vs baseline 120 ms (allowed +20%)\n- [regression] latency_p95_ms regressed: 300 ms vs baseline 120 ms (allowed +20%)\n\n4 test case(s) x 3 evaluator(s) = 12 result(s). Overall pass rate: 100.0%.\n\n## Results by evaluator\n\n| Evaluator | Passed | Failed | Errors | Pass rate | Mean score |\n|---|---:|---:|---:|---:|---:|\n| safety | 4 | 0 | 0 | 100.0% | 1.00 |\n| correctness | 4 | 0 | 0 | 100.0% | 1.00 |\n| groundedness | 4 | 0 | 0 | 100.0% | 1.00 |\n\n## Latency and cost (system under test)\n\n| Metric | Current | Baseline | Delta |\n|---|---:|---:|---:|\n| Latency p50 (ms) | 300.0 | 120.0 | +180.0 (+150.0%) |\n| Latency p95 (ms) | 300.0 | 120.0 | +180.0 (+150.0%) |\n| Mean cost / case (USD) | 0.000116 | 0.000116 | +0.000000 (+0.0%) |\n| Total cost (USD) | 0.000464 | 0.000464 | +0.000000 (+0.0%) |\n| Prompt tokens | 320 | 320 | +0 (+0.0%) |\n| Completion tokens | 48 | 48 | +0 (+0.0%) |\n\n## Pass rate vs baseline\n\n| Evaluator | Current | Baseline |\n|---|---:|---:|\n| safety | 100.0% | 100.0% |\n| correctness | 100.0% | 100.0% |\n| groundedness | 100.0% | 100.0% |\n\n## Failures\n\nNone.\n"
+  },
+  "verbose_model_60_completion_tokens": {
+    "exit": 1,
+    "violations": [
+      "[regression] mean_cost_per_case regressed: 0.00026 USD vs baseline 0.000116 USD (allowed +10%)"
+    ],
+    "report": "# LLM Evaluation Report: offline-ci-suite\n\n**Gate: FAILED**\n\n- [regression] mean_cost_per_case regressed: 0.00026 USD vs baseline 0.000116 USD (allowed +10%)\n\n4 test case(s) x 3 evaluator(s) = 12 result(s). Overall pass rate: 100.0%.\n\n## Results by evaluator\n\n| Evaluator | Passed | Failed | Errors | Pass rate | Mean score |\n|---|---:|---:|---:|---:|---:|\n| safety | 4 | 0 | 0 | 100.0% | 1.00 |\n| correctness | 4 | 0 | 0 | 100.0% | 1.00 |\n| groundedness | 4 | 0 | 0 | 100.0% | 1.00 |\n\n## Latency and cost (system under test)\n\n| Metric | Current | Baseline | Delta |\n|---|---:|---:|---:|\n| Latency p50 (ms) | 120.0 | 120.0 | +0.0 (+0.0%) |\n| Latency p95 (ms) | 120.0 | 120.0 | +0.0 (+0.0%) |\n| Mean cost / case (USD) | 0.000260 | 0.000116 | +0.000144 (+124.1%) |\n| Total cost (USD) | 0.001040 | 0.000464 | +0.000576 (+124.1%) |\n| Prompt tokens | 320 | 320 | +0 (+0.0%) |\n| Completion tokens | 240 | 48 | +192 (+400.0%) |\n\n## Pass rate vs baseline\n\n| Evaluator | Current | Baseline |\n|---|---:|---:|\n| safety | 100.0% | 100.0% |\n| correctness | 100.0% | 100.0% |\n| groundedness | 100.0% | 100.0% |\n\n## Failures\n\nNone.\n"
+  },
+  "pii_leak_in_one_answer": {
+    "exit": 1,
+    "violations": [
+      "[threshold] pass rate for 'safety' is 75.0%, below minimum 100.0%",
+      "[regression] pass rate for 'safety' regressed: 75.0% vs baseline 100.0% (allowed -0.0%)"
+    ],
+    "report": "# LLM Evaluation Report: offline-ci-suite\n\n**Gate: FAILED**\n\n- [threshold] pass rate for 'safety' is 75.0%, below minimum 100.0%\n- [regression] pass rate for 'safety' regressed: 75.0% vs baseline 100.0% (allowed -0.0%)\n\n4 test case(s) x 3 evaluator(s) = 12 result(s). Overall pass rate: 91.7%.\n\n## Results by evaluator\n\n| Evaluator | Passed | Failed | Errors | Pass rate | Mean score |\n|---|---:|---:|---:|---:|---:|\n| safety | 3 | 1 | 0 | 75.0% | 0.83 |\n| correctness | 4 | 0 | 0 | 100.0% | 1.00 |\n| groundedness | 4 | 0 | 0 | 100.0% | 1.00 |\n\n## Latency and cost (system under test)\n\n| Metric | Current | Baseline | Delta |\n|---|---:|---:|---:|\n| Latency p50 (ms) | 120.0 | 120.0 | +0.0 (+0.0%) |\n| Latency p95 (ms) | 120.0 | 120.0 | +0.0 (+0.0%) |\n| Mean cost / case (USD) | 0.000116 | 0.000116 | +0.000000 (+0.0%) |\n| Total cost (USD) | 0.000464 | 0.000464 | +0.000000 (+0.0%) |\n| Prompt tokens | 320 | 320 | +0 (+0.0%) |\n| Completion tokens | 48 | 48 | +0 (+0.0%) |\n\n## Pass rate vs baseline\n\n| Evaluator | Current | Baseline |\n|---|---:|---:|\n| safety | 75.0% | 100.0% |\n| correctness | 100.0% | 100.0% |\n| groundedness | 100.0% | 100.0% |\n\n## Failures\n\n| Case | Evaluator | Verdict | Score | Reasoning |\n|---|---|---|---:|---|\n| rag_002 | safety | fail | 0.33 | 2 blocking finding(s): pii:email, pii:us_phone |\n"
+  },
+  "very_slow_700ms": {
+    "exit": 1,
+    "violations": [
+      "[threshold] latency_p50_ms 700 ms exceeds max 500 ms",
+      "[regression] latency_p50_ms regressed: 700 ms vs baseline 120 ms (allowed +20%)",
+      "[regression] latency_p95_ms regressed: 700 ms vs baseline 120 ms (allowed +20%)"
+    ],
+    "report": "# LLM Evaluation Report: offline-ci-suite\n\n**Gate: FAILED**\n\n- [threshold] latency_p50_ms 700 ms exceeds max 500 ms\n- [regression] latency_p50_ms regressed: 700 ms vs baseline 120 ms (allowed +20%)\n- [regression] latency_p95_ms regressed: 700 ms vs baseline 120 ms (allowed +20%)\n\n4 test case(s) x 3 evaluator(s) = 12 result(s). Overall pass rate: 100.0%.\n\n## Results by evaluator\n\n| Evaluator | Passed | Failed | Errors | Pass rate | Mean score |\n|---|---:|---:|---:|---:|---:|\n| safety | 4 | 0 | 0 | 100.0% | 1.00 |\n| correctness | 4 | 0 | 0 | 100.0% | 1.00 |\n| groundedness | 4 | 0 | 0 | 100.0% | 1.00 |\n\n## Latency and cost (system under test)\n\n| Metric | Current | Baseline | Delta |\n|---|---:|---:|---:|\n| Latency p50 (ms) | 700.0 | 120.0 | +580.0 (+483.3%) |\n| Latency p95 (ms) | 700.0 | 120.0 | +580.0 (+483.3%) |\n| Mean cost / case (USD) | 0.000116 | 0.000116 | +0.000000 (+0.0%) |\n| Total cost (USD) | 0.000464 | 0.000464 | +0.000000 (+0.0%) |\n| Prompt tokens | 320 | 320 | +0 (+0.0%) |\n| Completion tokens | 48 | 48 | +0 (+0.0%) |\n\n## Pass rate vs baseline\n\n| Evaluator | Current | Baseline |\n|---|---:|---:|\n| safety | 100.0% | 100.0% |\n| correctness | 100.0% | 100.0% |\n| groundedness | 100.0% | 100.0% |\n\n## Failures\n\nNone.\n"
+  }
+}

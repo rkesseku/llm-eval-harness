@@ -1,8 +1,4 @@
 ---
-title: "LLM Evaluation & Guardrails Harness"
-subtitle: "Catch quality, safety, latency and cost regressions in LLM apps before they ship"
-author:
-  - name: "Reagan Kesseku · Project brief · github.com/rkesseku/llm-eval-harness"
 linkcolor: "#1f4e9e"
 format:
   typst:
@@ -27,6 +23,17 @@ format:
 ]
 #show heading.where(level: 2): set text(fill: rgb("#2d2d2d"), size: 11.5pt)
 #let glance(body) = block(fill: rgb("#eef3fb"), stroke: (left: 3pt + rgb("#1f4e9e")), inset: 10pt, radius: 2pt, width: 100%, body)
+// Header: red title, subtitle, author, repository link
+#align(center)[
+  #text(size: 17pt, weight: "bold", fill: rgb("#b91c1c"))[LLM Evaluation & Guardrails Harness]
+  #v(0.5em)
+  #text(size: 12pt, weight: "bold")[Catch quality, safety, latency and cost regressions in LLM apps before they ship]
+  #v(0.9em)
+  #text(size: 11pt)[Reagan Kesseku, Ph.D.]
+  #linebreak()
+  #text(size: 10pt)[#link("https://github.com/rkesseku/llm-eval-harness")[github.com/rkesseku/llm-eval-harness]]
+]
+#v(0.5em)
 ```
 
 ```{=typst}

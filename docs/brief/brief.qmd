@@ -116,7 +116,7 @@ All numbers in this section were produced by running the code in this repository
 To show the gate does its job, I modified a copy of the suite and re-ran the real CLI against the *unchanged* baseline and thresholds. Each variant changes one thing:
 
 | Scenario | Exit | Violations reported |
-|-----------|:-:|-----------------------|
+|-----------------------------------------------|:-----:|-----------------------------------------------|
 | Unmodified suite | 0 | none |
 | Scripted latency 120 to 300 ms | 1 | p50 and p95 latency regression (+20% allowed) |
 | Completion tokens 12 to 60 per answer | 1 | mean cost per case regression (0.00026 vs 0.000116 USD, +10% allowed) |

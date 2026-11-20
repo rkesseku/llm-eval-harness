@@ -77,7 +77,7 @@ Before promoting a change, a team needs to know: *did this make things better or
 
 ## Architecture
 
-![Architecture. A YAML suite defines cases, two model clients and evaluators. The runner calls the system under test once per case, applies each evaluator, and aggregates an `EvalReport`. Metrics and pricing summarise it. The gate compares the summary with thresholds and a baseline, then produces a report and an exit code.](figures/architecture.png){#fig-arch width=82%}
+![Architecture. A YAML suite defines cases, two model clients and evaluators. The runner calls the system under test once per case, applies each evaluator, and aggregates an `EvalReport`. The grader client is used only by the two LLM judges in the dashed group. Metrics and pricing summarise the report. The gate compares the summary with thresholds and a baseline, then produces a report and an exit code.](figures/architecture.png){#fig-arch width=82%}
 
 ## How a run works
 

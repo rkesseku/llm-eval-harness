@@ -41,20 +41,24 @@ def architecture():
     box(ax, 0.1, 2.2, 1.9, 1.3, "Suite (YAML)\ncases, clients,\nevaluators", fc="white")
     box(ax, 2.5, 2.2, 1.9, 1.3, "EvalRunner\ncase x evaluator\ngrid + timing", bold=True)
     box(ax, 2.5, 4.1, 1.9, 1.0, "System-under-test\nLLMClient", fc="white")
-    box(ax, 2.5, 0.3, 1.9, 1.0, "Grader\nLLMClient", fc="white")
-    box(ax, 5.2, 3.9, 2.1, 1.1, "Correctness\n(LLM judge, 1-5)")
-    box(ax, 5.2, 2.5, 2.1, 1.1, "Groundedness\n(LLM judge vs context)")
-    box(ax, 5.2, 1.1, 2.1, 1.1, "Safety (no LLM)\nPII, refusal, injection", fc="#fdf2e0", ec=ORG)
+    # The grader client is passed to the two LLM-judge evaluators (suite.build_evaluator),
+    # not to the runner, so it feeds a group box around Correctness and Groundedness.
+    box(ax, 5.1, 4.1, 2.3, 1.0, "Safety (no LLM)\nPII, refusal, injection", fc="#fdf2e0", ec=ORG)
+    ax.add_patch(FancyBboxPatch((5.0, 1.2), 2.5, 2.55, boxstyle="round,pad=0.02,rounding_size=0.1",
+                                fc="none", ec="#7f8fa6", lw=1.0, ls="--"))
+    box(ax, 5.1, 2.6, 2.3, 1.0, "Correctness\n(LLM judge, 1-5)")
+    box(ax, 5.1, 1.35, 2.3, 1.0, "Groundedness\n(LLM judge vs context)", fs=8)
+    box(ax, 5.35, 0.1, 1.8, 0.75, "Grader LLMClient", fc="white")
     box(ax, 8.0, 2.2, 1.7, 1.3, "EvalReport\nverdicts, scores,\nlatency, tokens", bold=True)
     box(ax, 10.1, 3.6, 1.8, 1.5, "metrics + pricing\np50/p95, cost,\npass rates", fc="white")
     box(ax, 10.1, 1.7, 1.8, 1.5, "Gate\nthresholds +\nbaseline.json", fc="#fbe9e7", ec=RED, bold=True)
-    box(ax, 10.1, 0.2, 1.8, 1.0, "Markdown report\n+ exit code 0 / 1 / 2", fc="white")
+    box(ax, 10.1, 0.2, 1.8, 1.0, "Markdown report\n+ exit code 0 / 1", fc="white")
     arrow(ax, (2.0, 2.85), (2.5, 2.85))
     arrow(ax, (3.45, 4.1), (3.45, 3.5))
-    arrow(ax, (3.45, 1.3), (3.45, 2.2))
-    for y in (4.45, 3.05, 1.65):
-        arrow(ax, (4.4, 2.85), (5.2, y))
-        arrow(ax, (7.3, y), (8.0, 2.85))
+    arrow(ax, (6.25, 0.85), (6.25, 1.2))
+    for y in (4.6, 3.1, 1.85):
+        arrow(ax, (4.4, 2.85), (5.1, y))
+        arrow(ax, (7.4, y), (8.0, 2.85))
     arrow(ax, (9.7, 2.85), (10.1, 4.2))
     arrow(ax, (11.0, 3.6), (11.0, 3.2))
     arrow(ax, (11.0, 1.7), (11.0, 1.2))

@@ -1,6 +1,9 @@
 ---
 bibliography: references.bib
-bibliographystyle: apa
+csl: apa.csl
+citeproc: true
+link-citations: true
+link-bibliography: true
 linkcolor: "#1f4e9e"
 format:
   typst:
@@ -13,6 +16,7 @@ format:
 ---
 
 ```{=typst}
+#show <refs>: set par(hanging-indent: 0.5in, first-line-indent: 0pt, justify: false)
 #set text(hyphenate: false)
 #set bibliography(title: "References")
 #show cite: set text(fill: rgb("#1f4e9e"))
@@ -39,7 +43,7 @@ format:
   #linebreak()
   #text(size: 10pt)[#link("https://github.com/rkesseku/llm-eval-harness")[github.com/rkesseku/llm-eval-harness]]
   #v(0.45em)
-  #text(size: 9.5pt)[#emph[Keywords:] LLM evaluation; LLM-as-a-judge; guardrails; PII detection; prompt injection]
+  #text(size: 9.5pt)[#emph[Keywords:] LLM evaluation, LLM-as-a-judge, guardrails, PII detection, prompt injection]
 ]
 #v(0.5em)
 ```
@@ -50,8 +54,8 @@ format:
 *Problem:* every prompt tweak or model swap in an LLM application can silently make answers worse, less safe, slower or more expensive, and teams usually find out in production. \
 *What I built:* a Python evaluation harness that scores answers (LLM-as-judge correctness and groundedness, plus deterministic PII / refusal / prompt-injection checks), records latency and token cost, and fails a CI job with a non-zero exit code when thresholds or a stored baseline are violated. \
 *Headline result:* 151 automated tests pass offline. In a reproducible demo, the unmodified offline suite passes the gate (exit 0) and four injected regressions (slower client, costlier output, a PII leak, a very slow client) each fail it (exit 1) with a Markdown report naming the exact metric. The safety checks classified all 33 of 33 examples in a small hand-written labelled set correctly. \
-*Caveat:* the CI suite uses scripted clients, so it proves the gate wiring, not the quality of any real model. \
-*Stack:* Python 3.10+, Pydantic v2, PyYAML, pytest, ruff, GitHub Actions; Groq backend for real models. \
+*Caveat:* the CI suite uses scripted clients, so it proves the gate wiring and says nothing about the quality of any real model. \
+*Stack:* Python 3.10+, Pydantic v2, PyYAML, pytest, ruff, GitHub Actions, and a Groq backend for real models. \
 *Repo:* #link("https://github.com/rkesseku/llm-eval-harness")[github.com/rkesseku/llm-eval-harness]
 ]
 ```
@@ -64,8 +68,8 @@ Before promoting a change, a team needs to know: *did this make things better or
 
 ## What it measures
 
-- **Correctness** and **groundedness**: a second "grader" model [@zheng2023judge] scores each answer on a 1 to 5 scale (normalised to 0 to 1). Correctness compares to a reference answer; groundedness checks that every claim is supported by the retrieved context, which is the standard hallucination check for retrieval-augmented generation (RAG) [@lewis2020rag].
-- **Safety**, with no LLM involved: validated PII detection, refusal detection, and prompt-injection signals [@greshake2023] in inputs and retrieved context. Being deterministic, it is reproducible and free to run.
+- **Correctness** and **groundedness**: a second "grader" model [@zheng2023judge] scores each answer on a 1 to 5 scale (normalised to 0 to 1). Correctness compares to a reference answer, and groundedness checks that every claim is supported by the retrieved context, which is the standard hallucination check for retrieval-augmented generation (RAG) [@lewis2020rag].
+- **Safety**, with no LLM involved: validated PII detection, refusal detection, and prompt-injection signals [@greshake2023] in inputs and retrieved context. Because it is deterministic, it is reproducible and free to run.
 - **Latency and cost** of the system under test: p50 and p95 latency, tokens, and dollar cost from a pricing table.
 - **A regression gate**: absolute limits plus comparison with a committed baseline, with configurable tolerances.
 
@@ -73,7 +77,7 @@ Before promoting a change, a team needs to know: *did this make things better or
 
 ## Architecture
 
-![Architecture. A YAML suite defines cases, two model clients and evaluators. The runner calls the system under test once per case, applies each evaluator, and aggregates an `EvalReport`; metrics and pricing summarise it; the gate compares the summary to thresholds and a baseline and produces a report and an exit code.](figures/architecture.png){#fig-arch width=82%}
+![Architecture. A YAML suite defines cases, two model clients and evaluators. The runner calls the system under test once per case, applies each evaluator, and aggregates an `EvalReport`. Metrics and pricing summarise it, and the gate compares the summary to thresholds and a baseline and produces a report and an exit code.](figures/architecture.png){#fig-arch width=82%}
 
 ## How a run works
 
@@ -93,20 +97,20 @@ The same command runs in GitHub Actions: a test job (Python 3.10 to 3.12, ruff, 
 
 **Deterministic safety checks before LLM judging.** PII and injection checks are rule-based so they are cheap, reproducible and cannot be fooled by the thing they are checking. Candidates must pass structural validation before they count:
 
-- credit-card-like digit runs must satisfy the **Luhn checksum**;
-- SSNs are rejected for invalid ranges (area 000, 666 or 9xx, group 00, serial 0000);
-- IPv4 octets must be valid, and loopback and unspecified addresses are ignored;
-- optional IBANs must pass the **mod-97** check.
+- Credit-card-like digit runs must satisfy the **Luhn checksum**.
+- SSNs are rejected for invalid ranges (area 000, 666 or 9xx, group 00, serial 0000).
+- IPv4 octets must be valid, and loopback and unspecified addresses are ignored.
+- Optional IBANs must pass the **mod-97** check.
 
-This trades a little recall for far fewer false alarms, which matters if the check can block a merge. Findings store only a masked preview, never the raw value.
+This trades a little recall for far fewer false alarms, which matters if the check can block a merge. Findings store only a masked preview and never the raw value.
 
-**Judge hygiene.** Graders run at temperature 0 and must return strict JSON; markdown fences are stripped and malformed output becomes an `ERROR` rather than a silent pass. Scores are normalised to [0, 1] so different scales aggregate on one axis. Pass thresholds are configurable (default 0.8 for correctness).
+**Judge hygiene.** Graders run at temperature 0 and must return strict JSON. Markdown fences are stripped, and malformed output becomes an `ERROR` rather than a silent pass. Scores are normalised to [0, 1] so different scales aggregate on one axis. Pass thresholds are configurable (default 0.8 for correctness).
 
-**Gate semantics.** Two kinds of violation are kept apart: *threshold* (an absolute limit, such as p95 latency above a ceiling or safety pass rate below 100%) and *regression* (worse than the baseline by more than a tolerance: latency +20%, cost +10%, pass-rate drop 0 in the example config). Baselines are plain JSON in the repository, so promoting new numbers is a deliberate, reviewable commit via `--update-baseline`.
+**Gate semantics.** Two kinds of violation are kept apart: *threshold* (an absolute limit, such as p95 latency above a ceiling or safety pass rate below 100%) and *regression* (worse than the baseline by more than a tolerance, which in the example config is latency +20%, cost +10% and pass-rate drop 0). Baselines are plain JSON in the repository, so promoting new numbers is a deliberate, reviewable commit via `--update-baseline`.
 
 # Results
 
-All numbers in this section were produced by running the code in this repository (`docs/brief/make_figures.py`). Nothing here measures a real model: the offline suite answers and grader scores are scripted.
+All numbers in this section were produced by running the code in this repository (`docs/brief/make_figures.py`). Nothing here measures a real model, because the offline suite answers and grader scores are scripted.
 
 ## Test suite and gate baseline
 
@@ -121,14 +125,14 @@ To show the gate does its job, I modified a copy of the suite and re-ran the rea
 | Unmodified suite | 0 | none |
 | Scripted latency 120 to 300 ms | 1 | p50 and p95 latency regression (+20% allowed) |
 | Completion tokens 12 to 60 per answer | 1 | mean cost per case regression (0.00026 vs 0.000116 USD, +10% allowed) |
-| One answer now contains an email and phone number | 1 | safety pass rate 75.0% below minimum 100%; safety regression vs baseline |
-| Scripted latency 120 to 700 ms | 1 | p50 above the 500 ms ceiling; p50 and p95 regression |
+| One answer now contains an email and phone number | 1 | safety pass rate 75.0% below minimum 100%, safety regression vs baseline |
+| Scripted latency 120 to 700 ms | 1 | p50 above the 500 ms ceiling, p50 and p95 regression |
 
 : Injected regressions, all run through `llm-eval run` with the committed thresholds and baseline. {#tbl-gate}
 
-![Gate outcome per scenario: the unmodified suite passes, each injected regression fails with exit code 1.](figures/gate.png){#fig-gate width=70%}
+![Gate outcome per scenario. The unmodified suite passes and each injected regression fails with exit code 1.](figures/gate.png){#fig-gate width=70%}
 
-The PII-leak variant is the most instructive: the grader is scripted to always accept, so correctness and groundedness stay at 100%, yet the deterministic safety evaluator fails the case and the report's failures table points at it. That is why safety checks are independent of the judge.
+The PII-leak variant is the most instructive. The grader is scripted to always accept, so correctness and groundedness stay at 100%, yet the deterministic safety evaluator fails the case and the report's failures table points at it. That is why safety checks are independent of the judge.
 
 ## Safety evaluator on a labelled set
 
@@ -136,24 +140,24 @@ I wrote a small labelled set of 33 short texts: 15 that should be flagged (email
 
 ![Confusion matrix and per-class accuracy for the safety evaluator on the hand-written set (15 positives, 18 negatives).](figures/safety.png){#fig-safety width=82%}
 
-Result: 15 true positives, 0 false negatives, 0 false positives, 18 true negatives (33 of 33 correct). Treat this as a sanity check, not a benchmark: I wrote both the examples and the rules, so the set is biased toward cases the rules already anticipate, and it is far too small to estimate real-world precision or recall.
+The evaluator produced 15 true positives, 0 false negatives, 0 false positives and 18 true negatives (33 of 33 correct). Treat this as a sanity check rather than a benchmark. I wrote both the examples and the rules, so the set is biased toward cases the rules already anticipate, and it is far too small to estimate real-world precision or recall.
 
 # What this demonstrates
 
-- **Evaluation engineering, not just prompting.** Turning "does it seem better?" into a repeatable pipeline with typed data models, a runner, pluggable evaluators and a serialisable report.
+- **Evaluation engineering.** Turning "does it seem better?" into a repeatable pipeline with typed data models, a runner, pluggable evaluators and a serialisable report.
 - **Production habits.** A CI-enforced gate with meaningful exit codes, a committed baseline, a Markdown job summary, no secrets needed in CI, a lint step, and a test matrix across three Python versions.
-- **Judgement about what an LLM should and should not judge.** Subjective quality goes to an LLM grader; checks that must be exact and reproducible (PII, refusal phrasing, injection signals) are rule-based and validated with checksums to keep false positives down.
+- **Judgement about what an LLM should and should not judge.** Subjective quality goes to an LLM grader. Checks that must be exact and reproducible (PII, refusal phrasing, injection signals) are rule-based and validated with checksums to keep false positives down.
 
 # Limitations and next steps
 
 
 
-- The CI suite is scripted. It validates the harness and gate logic, not any model. Evaluating a real model requires pointing the clients at the Groq backend with an API key, and I have not reported results from such a run here.
-- Latency from a real provider is noisy; the fixed tolerances in the example would need tuning (or repeated runs) to avoid flaky gates.
-- LLM-as-judge scores carry grader bias and variance; I did not measure agreement between the grader and human labels.
+- The CI suite is scripted. It validates the harness and gate logic but not any model. Evaluating a real model requires pointing the clients at the Groq backend with an API key, and I have not reported results from such a run here.
+- Latency from a real provider is noisy, so the fixed tolerances in the example would need tuning (or repeated runs) to avoid flaky gates.
+- LLM-as-judge scores carry grader bias and variance, and I did not measure agreement between the grader and human labels.
 - Safety checks are heuristics. Regexes miss obfuscated PII and novel injection phrasing, and the validation set above is small and self-authored.
-- Only one provider backend exists, execution is sequential, cost covers only system-under-test calls (grader tokens are recorded, not priced), and the shipped `pricing.yaml` holds placeholder prices, not any vendor's rates.
-- **Rubric / multi-criteria correctness scoring is not implemented**; correctness is a single 1 to 5 holistic score.
+- Only one provider backend exists, execution is sequential, cost covers only system-under-test calls (grader tokens are recorded, not priced), and the shipped `pricing.yaml` holds placeholder prices rather than any vendor's rates.
+- **Rubric / multi-criteria correctness scoring is not implemented**. Correctness is a single 1 to 5 holistic score.
 
 **Next steps** (from the repository roadmap): rubric scoring, more providers (OpenAI, Anthropic, Ollama), asyncio concurrency for large suites, HTML reports. I would add a human-labelled calibration set to measure judge agreement, and repeated runs with confidence intervals for latency gating.
 
@@ -176,3 +180,8 @@ python docs/brief/make_figures.py
 ```
 
 To evaluate a real model, set `GROQ_API_KEY` in `.env` and switch `system_client` / `grader_client` in the suite to `type: groq`.
+
+# References {.unnumbered}
+
+::: {#refs}
+:::

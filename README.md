@@ -6,26 +6,26 @@ A reusable evaluation framework for LLM applications. Score correctness, track c
 
 ## Why this exists
 
-In production LLM systems, every prompt tweak or model upgrade is a potential regression. This harness gives engineering teams a defensible answer to *"did this change make things better or worse?"* — with structured, reproducible evaluation runs that produce machine-readable reports.
+In production LLM systems, every prompt tweak or model upgrade is a potential regression. This harness gives engineering teams a defensible answer to *"did this change make things better or worse?"* It does this with structured, reproducible evaluation runs that produce machine-readable reports.
 
 ## What's implemented today
 
-- ✅ **LLM-as-judge correctness scoring** — graded on a 1–5 semantic scale, normalized to [0, 1]
-- ✅ **Groundedness evaluator** — LLM-as-judge check that every claim in a RAG answer is supported by the retrieved context
-- ✅ **Safety evaluator (deterministic, no LLM or network)** — validated PII detection with a redaction helper (email, US phone, SSN with invalid-range rejection, credit card with Luhn check, IPv4, optional IBAN with mod-97 check), configurable refusal detection (expected-but-missing / unexpected), and prompt-injection signal detection in inputs and retrieved context. Findings are stored per result and never contain raw PII
-- ✅ **Latency & cost tracking** — per-case latency and prompt/completion tokens of the system-under-test are recorded in the report; a pricing table (YAML/JSON) turns tokens into cost
-- ✅ **Regression gate** — absolute thresholds (p50/p95 latency, mean cost per case, max total cost, per-evaluator min pass rate) plus comparison against a stored baseline JSON with configurable tolerances
-- ✅ **`llm-eval` CLI** — `llm-eval run --suite ... --baseline ... --thresholds ...` exits non-zero on any violation, so it can block a merge or promotion
-- ✅ **Markdown reports** — per-evaluator summary, latency/cost vs baseline, failures table
-- ✅ **CI integration** — GitHub Actions runs the test matrix (Python 3.10–3.12) and an `eval-gate` job that runs an offline example suite through the CLI against a committed baseline, with no secrets required
-- ✅ **Provider-agnostic LLM client** — `Protocol`-based interface; Groq backend included; fake and scripted offline clients for deterministic tests and CI
-- ✅ **Pydantic v2 data models, runner/orchestrator** — runs N test cases × M evaluators and aggregates a serializable report
+- ✅ **LLM-as-judge correctness scoring**: graded on a 1–5 semantic scale, normalized to [0, 1]
+- ✅ **Groundedness evaluator**: an LLM-as-judge check that every claim in a RAG answer is supported by the retrieved context
+- ✅ **Safety evaluator (deterministic, no LLM or network)**: validated PII detection with a redaction helper (email, US phone, SSN with invalid-range rejection, credit card with Luhn check, IPv4, optional IBAN with mod-97 check), configurable refusal detection (expected-but-missing / unexpected), and prompt-injection signal detection in inputs and retrieved context. Findings are stored per result and never contain raw PII
+- ✅ **Latency & cost tracking**: per-case latency and prompt/completion tokens of the system under test are recorded in the report, and a pricing table (YAML/JSON) turns tokens into cost
+- ✅ **Regression gate**: absolute thresholds (p50/p95 latency, mean cost per case, max total cost, per-evaluator min pass rate) plus comparison against a stored baseline JSON with configurable tolerances
+- ✅ **`llm-eval` CLI**: `llm-eval run --suite ... --baseline ... --thresholds ...` exits non-zero on any violation, so it can block a merge or promotion
+- ✅ **Markdown reports**: per-evaluator summary, latency/cost vs baseline, failures table
+- ✅ **CI integration**: GitHub Actions runs the test matrix (Python 3.10–3.12) and an `eval-gate` job that runs an offline example suite through the CLI against a committed baseline, with no secrets required
+- ✅ **Provider-agnostic LLM client**: a `Protocol`-based interface with a Groq backend, plus fake and scripted offline clients for deterministic tests and CI
+- ✅ **Pydantic v2 data models, runner/orchestrator**: runs N test cases × M evaluators and aggregates a serializable report
 
 Not implemented: rubric/multi-criteria scoring, additional provider backends, concurrent execution, HTML reports (see roadmap).
 
 ## Roadmap
 
-- [x] Groundedness evaluator (RAG-aware: verifies answers stay anchored to retrieved context)
+- [x] Groundedness evaluator (RAG-aware: verifies that answers stay anchored to retrieved context)
 - [x] Safety evaluator (PII detection, refusal patterns, prompt-injection signals)
 - [x] Cost & latency regression thresholds with CI-friendly exit codes
 - [x] Markdown report rendering
@@ -92,8 +92,8 @@ Notes:
 
 - Latency and cost cover the system-under-test calls (one per test case). Grader token usage is reported per result but not priced.
 - `examples/ci/pricing.yaml` contains **illustrative placeholder prices**, not any vendor's rates. Supply your own.
-- The example suite uses scripted clients, so it validates the harness and gate wiring, not the quality of any real model. Point `system_client` / `grader_client` at `type: groq` (needs `GROQ_API_KEY`) to evaluate a real model.
-- Latency in CI with scripted clients is a constant; with real models, expect noise and set tolerances accordingly.
+- The example suite uses scripted clients, so it validates the harness and gate wiring, not the quality of any real model. Set `system_client` / `grader_client` to `type: groq` (needs `GROQ_API_KEY`) to evaluate a real model.
+- With scripted clients, latency in CI is a constant. Expect noise with real models and set tolerances accordingly.
 
 Using the safety evaluator directly:
 
@@ -110,7 +110,7 @@ print(redact_pii("Call (415) 555-0132 or mail jane@example.com"))
 ```
 
 Per-case metadata: `expect_refusal` (true/false), `allow_injection` (true for deliberately adversarial cases).
-Heuristics are signals, not guarantees: regexes miss obfuscated PII and novel injection phrasing.
+The heuristics are signals rather than guarantees. Regexes miss obfuscated PII and novel injection phrasing.
 
 ## Example output
 
@@ -165,10 +165,10 @@ examples/ci/               # Offline suite, thresholds, pricing, committed basel
 
 ### Design notes
 
-- **Two distinct LLM clients per eval run.** The *system-under-test* client is the LLM being evaluated; each evaluator carries its own *grader* client. In production you'd typically use a cheaper, faster grader.
-- **`Protocol` over inheritance.** `LLMClient` is a structural type — any class with the right `complete(...)` signature works. This is what makes `FakeLLMClient` and `GroqClient` interchangeable.
-- **Errors don't kill the run.** If an evaluator raises, the base class catches it and emits an `ERROR` verdict so the rest of the run continues. The error is surfaced in the report.
-- **All scores normalized to [0, 1].** Different evaluators may use native 1–5, 1–10, or boolean scales internally; reports aggregate cleanly because everything's on the same axis.
+- **Two distinct LLM clients per eval run.** The *system-under-test* client is the LLM being evaluated. Each evaluator carries its own *grader* client. In production you'd typically use a cheaper, faster grader.
+- **`Protocol` over inheritance.** `LLMClient` is a structural type, so any class with the right `complete(...)` signature works. This is what makes `FakeLLMClient` and `GroqClient` interchangeable.
+- **Errors don't kill the run.** If an evaluator raises an exception, the base class catches it and emits an `ERROR` verdict, so the rest of the run continues. The error is surfaced in the report.
+- **All scores normalized to [0, 1].** Different evaluators may use native 1–5, 1–10, or boolean scales internally. Reports aggregate cleanly because everything is on the same axis.
 
 ## License
 

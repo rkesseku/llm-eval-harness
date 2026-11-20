@@ -52,8 +52,8 @@ format:
 #glance[
 *At a glance* \
 *Problem:* every prompt tweak or model swap in an LLM application can silently make answers worse, less safe, slower or more expensive, and teams usually find out in production. \
-*What I built:* a Python evaluation harness that scores answers (LLM-as-judge correctness and groundedness, plus deterministic PII / refusal / prompt-injection checks), records latency and token cost, and fails a CI job with a non-zero exit code when thresholds or a stored baseline are violated. \
-*Headline result:* 151 automated tests pass offline. In a reproducible demo, the unmodified offline suite passes the gate (exit 0) and four injected regressions (slower client, costlier output, a PII leak, a very slow client) each fail it (exit 1) with a Markdown report naming the exact metric. The safety checks classified all 33 of 33 examples in a small hand-written labelled set correctly. \
+*What I built:* a Python evaluation harness that scores answers (LLM-as-judge correctness and groundedness, plus deterministic PII / refusal / prompt-injection checks), records latency and token cost, and fails a CI job with a non-zero exit code when results breach thresholds or regress against a stored baseline. \
+*Headline result:* 151 automated tests pass offline. In a reproducible demo, the unmodified offline suite passes the gate (exit 0) and four injected regressions (slower client, costlier output, a PII leak, a very slow client) each fail it (exit 1) with a Markdown report naming the exact metric. The safety checks classified all 33 examples in a small hand-written labelled set correctly. \
 *Caveat:* the CI suite uses scripted clients, so it proves the gate wiring and says nothing about the quality of any real model. \
 *Stack:* Python 3.10+, Pydantic v2, PyYAML, pytest, ruff, GitHub Actions, and a Groq backend for real models. \
 *Repo:* #link("https://github.com/rkesseku/llm-eval-harness")[github.com/rkesseku/llm-eval-harness]
@@ -68,8 +68,8 @@ Before promoting a change, a team needs to know: *did this make things better or
 
 ## What it measures
 
-- **Correctness** and **groundedness**: a second "grader" model [@zheng2023judge] scores each answer on a 1 to 5 scale (normalised to 0 to 1). Correctness compares to a reference answer, and groundedness checks that every claim is supported by the retrieved context, which is the standard hallucination check for retrieval-augmented generation (RAG) [@lewis2020rag].
-- **Safety**, with no LLM involved: validated PII detection, refusal detection, and prompt-injection signals [@greshake2023] in inputs and retrieved context. Because it is deterministic, it is reproducible and free to run.
+- **Correctness** and **groundedness**: a second "grader" model [@zheng2023judge] scores each answer on a 1 to 5 scale (normalised to 0 to 1). Correctness compares the answer with a reference answer, and groundedness checks that every claim is supported by the retrieved context, which is the standard hallucination check for retrieval-augmented generation (RAG) [@lewis2020rag].
+- **Safety**, with no LLM involved: validated PII detection, refusal detection, and prompt-injection signals [@greshake2023] in inputs and retrieved context. Because these checks are deterministic, they are reproducible and free to run.
 - **Latency and cost** of the system under test: p50 and p95 latency, tokens, and dollar cost from a pricing table.
 - **A regression gate**: absolute limits plus comparison with a committed baseline, with configurable tolerances.
 
@@ -77,13 +77,13 @@ Before promoting a change, a team needs to know: *did this make things better or
 
 ## Architecture
 
-![Architecture. A YAML suite defines cases, two model clients and evaluators. The runner calls the system under test once per case, applies each evaluator, and aggregates an `EvalReport`. Metrics and pricing summarise it, and the gate compares the summary to thresholds and a baseline and produces a report and an exit code.](figures/architecture.png){#fig-arch width=82%}
+![Architecture. A YAML suite defines cases, two model clients and evaluators. The runner calls the system under test once per case, applies each evaluator, and aggregates an `EvalReport`. Metrics and pricing summarise it. The gate compares the summary with thresholds and a baseline, then produces a report and an exit code.](figures/architecture.png){#fig-arch width=82%}
 
 ## How a run works
 
 1. **Suite.** A declarative YAML/JSON file lists test cases (input, optional retrieved context, expected answer, metadata), the *system-under-test* client (the model being evaluated), the *grader* client, and the evaluators to apply.
 2. **Runner.** `EvalRunner` walks the case-by-evaluator grid. For each case it makes one call to the system under test, timing it and recording prompt and completion tokens, then runs every evaluator on the answer.
-3. **Evaluators.** Each returns a verdict (pass, fail or error), a score in [0, 1] and structured details. If an evaluator raises, the base class converts it into an `ERROR` verdict so the rest of the run continues and the failure is visible in the report.
+3. **Evaluators.** Each returns a verdict (pass, fail or error), a score in [0, 1] and structured details. If an evaluator raises an exception, the base class converts it into an `ERROR` verdict, so the rest of the run continues and the failure is visible in the report.
 4. **Metrics.** Results are summarised into p50/p95 latency, mean and total cost, token counts and per-evaluator pass rates.
 5. **Gate and report.** `evaluate_gate` returns a list of violations. The CLI prints a Markdown report (per-evaluator table, latency and cost against baseline, a failures table) and exits with `0` (passed), `1` (violation or regression) or `2` (usage or configuration error).
 
@@ -93,9 +93,9 @@ The same command runs in GitHub Actions: a test job (Python 3.10 to 3.12, ruff, 
 
 **Two separate model clients.** The system under test and the grader are distinct objects, so a cheaper or different model can grade a more expensive one, and grader choice is explicit rather than hidden.
 
-**`Protocol` instead of inheritance for clients.** `LLMClient` is a structural type with a single `complete(...)` method. The Groq backend, a `FakeLLMClient` and a `ScriptedLLMClient` are interchangeable. The scripted client returns canned answers, token counts and a fixed latency, which is what lets CI run with no network and no secrets, and makes every test deterministic.
+**`Protocol` instead of inheritance for clients.** `LLMClient` is a structural type with a single `complete(...)` method. The Groq backend, a `FakeLLMClient` and a `ScriptedLLMClient` are interchangeable. The scripted client returns canned answers, token counts and a fixed latency. That is what lets CI run with no network and no secrets, and it makes every test deterministic.
 
-**Deterministic safety checks before LLM judging.** PII and injection checks are rule-based so they are cheap, reproducible and cannot be fooled by the thing they are checking. Candidates must pass structural validation before they count:
+**Deterministic safety checks before LLM judging.** PII and injection checks are rule-based, so they are cheap and reproducible, and they cannot be fooled by the text they check. Candidate matches must pass structural validation before they count as findings:
 
 - Credit-card-like digit runs must satisfy the **Luhn checksum**.
 - SSNs are rejected for invalid ranges (area 000, 666 or 9xx, group 00, serial 0000).
@@ -106,11 +106,11 @@ This trades a little recall for far fewer false alarms, which matters if the che
 
 **Judge hygiene.** Graders run at temperature 0 and must return strict JSON. Markdown fences are stripped, and malformed output becomes an `ERROR` rather than a silent pass. Scores are normalised to [0, 1] so different scales aggregate on one axis. Pass thresholds are configurable (default 0.8 for correctness).
 
-**Gate semantics.** Two kinds of violation are kept apart: *threshold* (an absolute limit, such as p95 latency above a ceiling or safety pass rate below 100%) and *regression* (worse than the baseline by more than a tolerance, which in the example config is latency +20%, cost +10% and pass-rate drop 0). Baselines are plain JSON in the repository, so promoting new numbers is a deliberate, reviewable commit via `--update-baseline`.
+**Gate semantics.** Two kinds of violation are kept apart: *threshold* (an absolute limit, such as p95 latency above a ceiling or safety pass rate below 100%) and *regression* (worse than the baseline by more than a set tolerance). The example config allows latency +20%, cost +10% and a pass-rate drop of 0. Baselines are plain JSON in the repository, so promoting new numbers is a deliberate, reviewable commit via `--update-baseline`.
 
 # Results
 
-All numbers in this section were produced by running the code in this repository (`docs/brief/make_figures.py`). Nothing here measures a real model, because the offline suite answers and grader scores are scripted.
+All numbers in this section were produced by running the code in this repository (`docs/brief/make_figures.py`). Nothing here measures a real model, because the offline suite's answers and grader scores are scripted.
 
 ## Test suite and gate baseline
 
@@ -118,7 +118,7 @@ All numbers in this section were produced by running the code in this repository
 
 ## The gate catching injected regressions
 
-To show the gate does its job, I modified a copy of the suite and re-ran the real CLI against the *unchanged* baseline and thresholds. Each variant changes one thing:
+To show that the gate does its job, I modified a copy of the suite and re-ran the real CLI against the *unchanged* baseline and thresholds. Each variant changes one thing:
 
 | Scenario | Exit | Violations reported |
 |-----------------------------------------------|:-----:|-----------------------------------------------|
@@ -132,7 +132,7 @@ To show the gate does its job, I modified a copy of the suite and re-ran the rea
 
 ![Gate outcome per scenario. The unmodified suite passes and each injected regression fails with exit code 1.](figures/gate.png){#fig-gate width=70%}
 
-The PII-leak variant is the most instructive. The grader is scripted to always accept, so correctness and groundedness stay at 100%, yet the deterministic safety evaluator fails the case and the report's failures table points at it. That is why safety checks are independent of the judge.
+The PII-leak variant is the most instructive. The grader is scripted to always accept, so correctness and groundedness stay at 100%, yet the deterministic safety evaluator fails the case and the report's failures table points at it. This is why the safety checks are kept independent of the judge.
 
 ## Safety evaluator on a labelled set
 
@@ -156,10 +156,10 @@ The evaluator produced 15 true positives, 0 false negatives, 0 false positives a
 - Latency from a real provider is noisy, so the fixed tolerances in the example would need tuning (or repeated runs) to avoid flaky gates.
 - LLM-as-judge scores carry grader bias and variance, and I did not measure agreement between the grader and human labels.
 - Safety checks are heuristics. Regexes miss obfuscated PII and novel injection phrasing, and the validation set above is small and self-authored.
-- Only one provider backend exists, execution is sequential, cost covers only system-under-test calls (grader tokens are recorded, not priced), and the shipped `pricing.yaml` holds placeholder prices rather than any vendor's rates.
+- Only one provider backend exists, execution is sequential, cost covers only system-under-test calls (grader tokens are recorded but not priced), and the shipped `pricing.yaml` holds placeholder prices rather than any vendor's rates.
 - **Rubric / multi-criteria correctness scoring is not implemented**. Correctness is a single 1 to 5 holistic score.
 
-**Next steps** (from the repository roadmap): rubric scoring, more providers (OpenAI, Anthropic, Ollama), asyncio concurrency for large suites, HTML reports. I would add a human-labelled calibration set to measure judge agreement, and repeated runs with confidence intervals for latency gating.
+**Next steps** (from the repository roadmap): rubric scoring, more providers (OpenAI, Anthropic, Ollama), asyncio concurrency for large suites and HTML reports. I would also add a human-labelled calibration set to measure judge agreement, and repeated runs with confidence intervals for latency gating.
 
 # How to run it
 

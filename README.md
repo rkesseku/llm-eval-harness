@@ -155,6 +155,7 @@ src/llm_eval_harness/
 ├── gate.py                # Thresholds + baseline regression comparison
 ├── report.py              # Markdown report rendering
 ├── suite.py               # Declarative YAML/JSON suites
+├── hello_llm.py           # One-prompt check that the Groq client is wired up
 └── cli.py                 # `llm-eval run` entry point (CI gate)
 
 tests/                     # unit + end-to-end CLI tests, no network calls
